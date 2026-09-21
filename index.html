@@ -1602,9 +1602,9 @@ Select the policies that will govern neighborhood electricity use during gamepla
 </div>
 
 <div class="policy-option-grid">
-<button id="systemFinesPolicyButton" class="mode-button" onclick="toggleGamePolicy('systemFines')">⚠️ System Fines for Exceeding Capacity</button>
-<button id="flexibleBillingPolicyButton" class="mode-button" onclick="toggleGamePolicy('flexibleBilling')">💡 Flexible Billing Rates</button>
 <button id="systemUpdatesPolicyButton" class="mode-button" onclick="toggleGamePolicy('systemUpdates')">📢 System Updates for Customers</button>
+<button id="flexibleBillingPolicyButton" class="mode-button" onclick="toggleGamePolicy('flexibleBilling')">💡 Flexible Billing Rates</button>
+<button id="systemFinesPolicyButton" class="mode-button" onclick="toggleGamePolicy('systemFines')">⚠️ System Fines for Exceeding Capacity</button>
 <button id="serviceDisconnectionPolicyButton" class="mode-button" onclick="toggleGamePolicy('serviceDisconnection')">🔌 Service Disconnection</button>
 </div>
 
@@ -1621,30 +1621,12 @@ Policies may be selected individually or in any combination.
 Select at least one Game Policy above to refine its design.
 </div>
 
-<div id="systemFinesRefinement" class="policy-refinement-panel">
-<div class="policy-refinement-title">⚠️ System Fines for Exceeding Capacity</div>
-<div class="policy-refinement-description">
-Choose the fine charged for each electron by which a purchase exceeds the grid's available capacity.<br><br>
-Default: <strong>$50 per excess electron</strong>.
-</div>
-<div class="warning-option-buttons" id="systemFineRateButtons"></div>
-</div>
-
-<div id="flexibleBillingRefinement" class="policy-refinement-panel">
-<div class="policy-refinement-title">💡 Flexible Billing Rates</div>
-<div class="policy-refinement-description">
-The normal electricity rate is fixed at <strong>$20 per electron</strong>.<br><br>
-When neighborhood demand comes within 10e of grid capacity, the selected high-demand rate will apply.<br><br>
-Default high-demand rate: <strong>$30 per electron</strong>.
-</div>
-<div class="warning-option-buttons" id="highDemandRateButtons"></div>
-</div>
-
 <div id="systemUpdatesRefinement" class="policy-refinement-panel">
 <div class="policy-refinement-title">📢 System Updates for Customers</div>
 <div class="policy-refinement-description">
-Choose which pre-purchase system warnings customers receive.<br><br>
-If more than one enabled warning applies to a purchase, only the <strong>most severe applicable warning</strong> will be shown.
+When a purchase comes within a specified threshold of causing a brownout, the customer will receive a warning before finalizing the purchase. If more than one enabled warning applies, only the <strong>most severe applicable warning</strong> will be shown.<br><br>
+<strong>Default: Warnings are enabled at all levels.</strong><br><br>
+Choose which pre-purchase system warnings customers receive.
 </div>
 <div class="warning-option-buttons">
 <button id="warning10Button" class="warning-option-button selected" onclick="toggleSystemUpdateWarning('within10')">✓ Within 10e Warning</button>
@@ -1653,9 +1635,33 @@ If more than one enabled warning applies to a purchase, only the <strong>most se
 </div>
 </div>
 
+<div id="flexibleBillingRefinement" class="policy-refinement-panel">
+<div class="policy-refinement-title">💡 Flexible Billing Rates</div>
+<div class="policy-refinement-description">
+When neighborhood demand comes within <strong>10 electrons of grid capacity</strong>, the selected high-demand electricity rate will apply.<br><br>
+The normal electricity rate is fixed at <strong>$20 per electron</strong>.<br><br>
+<strong>Default high-demand rate: $30 per electron.</strong><br><br>
+Choose the electricity rate charged during periods of high demand.
+</div>
+<div class="warning-option-buttons" id="highDemandRateButtons"></div>
+</div>
+
+<div id="systemFinesRefinement" class="policy-refinement-panel">
+<div class="policy-refinement-title">⚠️ System Fines for Exceeding Capacity</div>
+<div class="policy-refinement-description">
+When a purchase causes a brownout, the player who made the purchase is fined for each electron by which the purchase exceeds the grid's available capacity.<br><br>
+<strong>Default: $50 per excess electron.</strong><br><br>
+Choose the fine charged for each electron by which a purchase exceeds the grid's available capacity.
+</div>
+<div class="warning-option-buttons" id="systemFineRateButtons"></div>
+</div>
+
 <div id="serviceDisconnectionRefinement" class="policy-refinement-panel">
 <div class="policy-refinement-title">🔌 Service Disconnection</div>
-<div class="policy-refinement-description">There are no aspects of this policy to refine.</div>
+<div class="policy-refinement-description">
+If a player causes a brownout, they are disconnected from the micro-grid and removed from the game for all future rounds.<br><br>
+There are no aspects of this policy to refine.
+</div>
 </div>
 
 </div>
