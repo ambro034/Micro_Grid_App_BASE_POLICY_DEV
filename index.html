@@ -1753,6 +1753,89 @@ let state = {
 let players = [];
 let modalResolver = null;
 
+/* ============================================================
+   GAME PROGRESS AUTOSAVE
+   ============================================================ */
+
+const GAME_PROGRESS_KEY = "neighborhoodMicroGridManagerProgress";
+
+function saveGameProgress(){
+    const managerView=document.getElementById("managerView");
+    if(!managerView||managerView.style.display==="none") return;
+
+    const savedProgress={
+        state:state,
+        players:players,
+        goodsCardQuantities:goodsCards.map(card=>card.quantity),
+        solarPanelCardQuantities:solarPanelCards.map(card=>card.quantity),
+        actionHistoryHTML:document.getElementById("actionHistoryLog").innerHTML
+    };
+
+    localStorage.setItem(GAME_PROGRESS_KEY,JSON.stringify(savedProgress));
+}
+
+function clearSavedGameProgress(){
+    localStorage.removeItem(GAME_PROGRESS_KEY);
+}
+
+function restoreSavedGameProgress(){
+    const saved=localStorage.getItem(GAME_PROGRESS_KEY);
+    if(!saved) return false;
+
+    try{
+        const savedProgress=JSON.parse(saved);
+        if(!savedProgress||!savedProgress.state||!Array.isArray(savedProgress.players)) return false;
+
+        state=savedProgress.state;
+        players=savedProgress.players;
+
+        if(Array.isArray(savedProgress.goodsCardQuantities)){
+            goodsCards.forEach((card,index)=>{
+                if(savedProgress.goodsCardQuantities[index]!==undefined){
+                    card.quantity=savedProgress.goodsCardQuantities[index];
+                }
+            });
+        }
+
+        if(Array.isArray(savedProgress.solarPanelCardQuantities)){
+            solarPanelCards.forEach((card,index)=>{
+                if(savedProgress.solarPanelCardQuantities[index]!==undefined){
+                    card.quantity=savedProgress.solarPanelCardQuantities[index];
+                }
+            });
+        }
+
+        document.getElementById("setupView").style.display="none";
+        document.getElementById("managerView").style.display="block";
+        document.getElementById("endView").style.display="none";
+        document.getElementById("gridDashboard").style.display="grid";
+
+        if(state.randomized){
+            document.getElementById("demandDashboardCard").style.display="none";
+            document.getElementById("brownoutDashboardCard").style.display="none";
+        }else{
+            document.getElementById("demandDashboardCard").style.display="block";
+            document.getElementById("brownoutDashboardCard").style.display="block";
+        }
+
+        if(savedProgress.actionHistoryHTML){
+            document.getElementById("actionHistoryLog").innerHTML=savedProgress.actionHistoryHTML;
+        }
+
+        const currentLoad=getCurrentSystemLoad();
+        document.getElementById("dispDemand").innerText=`${currentLoad} / ${state.capacity} e`;
+        document.getElementById("dispDemand").style.color=currentLoad>state.capacity?"var(--danger)":"var(--text-main)";
+
+        updateBrownoutBoxes();
+        updateUserInterface();
+        return true;
+    }catch(error){
+        console.error("Unable to restore saved game progress:",error);
+        clearSavedGameProgress();
+        return false;
+    }
+}
+
 function openGameModal({title="System Message",icon="⚡",body="",buttons=[{text:"OK",className:"primary",value:true}],input=null}={}) {
     const overlay=document.getElementById("gameModalOverlay");
     const modalIcon=document.getElementById("modalIcon");
@@ -1927,6 +2010,7 @@ function appendLog(msg){
     element.className="log-item";
     element.innerText=`[Rd ${state.round}] ${msg}`;
     log.insertBefore(element,log.firstChild);
+    saveGameProgress();
 }
 
 async function registerNeighbor(){
@@ -2377,9 +2461,11 @@ function updateUserInterface(){
     }else if(state.activePlayerIdx!==-1&&players[state.activePlayerIdx]){
         document.getElementById("turnTrackingText").innerText=`Current turn belongs to: ${players[state.activePlayerIdx].name}`;
     }else document.getElementById("turnTrackingText").innerText="No active player.";
+    saveGameProgress();
 }
 
 function forceEndGame(condition){
+    clearSavedGameProgress();
     state.solarPanelSpecialTurn=false;state.solarPanelEligiblePlayers=[];state.solarPanelCompletedPlayers=[];state.solarPanelTurnIndex=0;state.normalTurnReturnIndex=-1;state.solarPanelPurchasedDuringOpportunity=false;
     document.getElementById("managerView").style.display="none";
     document.getElementById("endView").style.display="block";
@@ -2409,6 +2495,8 @@ function forceEndGame(condition){
         podium.appendChild(row);
     });
 }
+
+restoreSavedGameProgress();
 
 </script>
 
