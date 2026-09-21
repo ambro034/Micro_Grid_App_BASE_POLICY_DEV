@@ -1553,7 +1553,7 @@ Players may establish the grid parameters themselves or allow the system to rand
 <div class="setup-grid">
 
 <div class="setup-field">
-<label>Initial Grid Capacity (30–50 electrons)</label>
+<label id="initialCapacityLabel">Initial Grid Capacity (30–50 electrons)</label>
 <input type="number" id="initialCapacityInput" min="30" max="50" value="50">
 </div>
 
@@ -1567,7 +1567,7 @@ Players may establish the grid parameters themselves or allow the system to rand
 <div style="margin-top:20px;font-weight:bold;">Capacity Added After Each Brownout</div>
 
 <p style="color:var(--text-muted);font-size:0.8rem;">
-Set the number of additional electrons added after each brownout. Each value must be between 5 and 15.
+Set the number of additional electrons added after each brownout. The permitted range is 5–15 electrons.
 </p>
 
 <div id="brownoutCapacityInputs" class="brownout-inputs"></div>
@@ -1579,9 +1579,9 @@ Set the number of additional electrons added after each brownout. Each value mus
 🎲 <strong>Randomized Grid Parameters</strong><br><br>
 The system will randomly determine:
 <ul>
-<li>Initial capacity: <strong>30–50 electrons</strong></li>
-<li>Number of brownouts before blackout: <strong>1–6</strong></li>
-<li>Capacity added after each brownout: <strong>5–15 electrons</strong></li>
+<li>Initial capacity: <strong id="randomCapacityRange">based on the number of players</strong></li>
+<li>Number of brownouts before blackout: <strong id="randomBrownoutLimitRange">1–number of players</strong></li>
+<li>Capacity added after each brownout: <strong id="randomBrownoutRange">based on the number of players</strong></li>
 </ul>
 <strong>Note:</strong> Grid capacity and the brownout limit will remain hidden from players during gameplay.
 </div>
@@ -2024,18 +2024,58 @@ function updateSystemUpdateWarningButtons(){
 initializePolicyRefinementOptions();
 
 function randomInteger(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+
+function getDynamicGridBounds(){
+    const playerCount=players.length;
+    return {
+        capacityMin:Math.ceil(5*playerCount),
+        capacityMax:Math.ceil(8*playerCount),
+        brownoutAddMin:Math.ceil(1*playerCount),
+        brownoutAddMax:Math.ceil(2.5*playerCount)
+    };
+}
+
+function updateDynamicGridSetup(){
+    if(players.length===0) return;
+
+    const bounds=getDynamicGridBounds();
+    const randomCapacityRange=document.getElementById("randomCapacityRange");
+    const randomBrownoutRange=document.getElementById("randomBrownoutRange");
+    const randomBrownoutLimitRange=document.getElementById("randomBrownoutLimitRange");
+
+    randomCapacityRange.innerText=`${bounds.capacityMin}–${bounds.capacityMax} electrons`;
+    randomBrownoutRange.innerText=`${bounds.brownoutAddMin}–${bounds.brownoutAddMax} electrons`;
+    if(randomBrownoutLimitRange) randomBrownoutLimitRange.innerText=`1–${Math.ceil(players.length)}`;
+
+    generateBrownoutCapacityInputs();
+}
+
 function generateBrownoutCapacityInputs(){
     const input=document.getElementById("brownoutLimitInput");
     let number=parseInt(input.value);
     if(isNaN(number)) number=4;
     number=Math.max(1,Math.min(6,number));
     input.value=number;
+
+    const bounds={brownoutAddMin:5,brownoutAddMax:15};
+
     const container=document.getElementById("brownoutCapacityInputs");
+    const existingValues=[];
+    container.querySelectorAll('input[type="number"]').forEach(field=>{
+        existingValues.push(parseInt(field.value));
+    });
+
     container.innerHTML="";
+
     for(let i=1;i<=number;i++){
+        const existing=existingValues[i-1];
+        const defaultValue=Number.isFinite(existing)
+            ? Math.max(bounds.brownoutAddMin,Math.min(bounds.brownoutAddMax,existing))
+            : Math.ceil((bounds.brownoutAddMin+bounds.brownoutAddMax)/2);
+
         const wrapper=document.createElement("div");
         wrapper.className="brownout-input";
-        wrapper.innerHTML=`<label>After Brownout ${i}</label><input type="number" id="brownoutAdd${i}" min="5" max="15" value="10"><div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">+5 to +15 electrons</div>`;
+        wrapper.innerHTML=`<label>After Brownout ${i}</label><input type="number" id="brownoutAdd${i}" min="${bounds.brownoutAddMin}" max="${bounds.brownoutAddMax}" value="${defaultValue}"><div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">+${bounds.brownoutAddMin} to +${bounds.brownoutAddMax} electrons</div>`;
         container.appendChild(wrapper);
     }
 }
@@ -2059,6 +2099,8 @@ async function finalizePlayers(){
         );
         return;
     }
+
+    updateDynamicGridSetup();
 
     document.getElementById("playerSetupView").style.display="none";
     document.getElementById("gameSetupView").style.display="block";
@@ -2111,21 +2153,31 @@ function finishPlayerRound(pIdx){
 function togglePlayerDetails(pIdx){if(!players[pIdx]) return;players[pIdx].showDetails=!players[pIdx].showDetails;updateUserInterface();}
 
 function establishGridParameters(){
+    const bounds=getDynamicGridBounds();
+
     if(setupMode==="random"){
-        state.capacity=randomInteger(30,50);
-        state.brownoutLimit=randomInteger(1,6);
+        state.capacity=randomInteger(bounds.capacityMin,bounds.capacityMax);
+        state.brownoutLimit=randomInteger(Math.ceil(1),Math.ceil(players.length));
         state.capacityAdditions=[];
-        for(let i=0;i<state.brownoutLimit;i++) state.capacityAdditions.push(randomInteger(5,15));
+        for(let i=0;i<state.brownoutLimit;i++){
+            state.capacityAdditions.push(randomInteger(bounds.brownoutAddMin,bounds.brownoutAddMax));
+        }
         state.randomized=true;
     }else{
         const capacity=parseInt(document.getElementById("initialCapacityInput").value);
-        if(isNaN(capacity)||capacity<30||capacity>50){showMessage("Invalid Grid Capacity","Initial capacity must be between <strong>30 and 50 electrons</strong>.","⚡");return false;}
+        if(isNaN(capacity)||capacity<30||capacity>50){
+            showMessage("Invalid Grid Capacity","Initial capacity must be between <strong>30 and 50 electrons</strong>.","⚡");
+            return false;
+        }
         const limit=parseInt(document.getElementById("brownoutLimitInput").value);
         if(isNaN(limit)||limit<1||limit>6){showMessage("Invalid Brownout Limit","The number of brownouts before blackout must be between <strong>1 and 6</strong>.","⚠️");return false;}
         let additions=[];
         for(let i=1;i<=limit;i++){
             const value=parseInt(document.getElementById(`brownoutAdd${i}`).value);
-            if(isNaN(value)||value<5||value>15){showMessage("Invalid Capacity Addition",`Capacity added after Brownout ${i} must be between <strong>5 and 15 electrons</strong>.`,`🔧`);return false;}
+            if(isNaN(value)||value<5||value>15){
+                showMessage("Invalid Capacity Addition",`Capacity added after Brownout ${i} must be between <strong>5 and 15 electrons</strong>.`,`🔧`);
+                return false;
+            }
             additions.push(value);
         }
         state.capacity=capacity;state.brownoutLimit=limit;state.capacityAdditions=additions;state.randomized=false;
