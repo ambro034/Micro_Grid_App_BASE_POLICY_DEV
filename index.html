@@ -1553,8 +1553,8 @@ Players may establish the grid parameters themselves or allow the system to rand
 <div class="setup-grid">
 
 <div class="setup-field">
-<label id="initialCapacityLabel">Initial Grid Capacity (30–50 electrons)</label>
-<input type="number" id="initialCapacityInput" min="30" max="50" value="50">
+<label id="initialCapacityLabel">Initial Grid Capacity (20–50 electrons)</label>
+<input type="number" id="initialCapacityInput" min="20" max="50" value="50">
 </div>
 
 <div class="setup-field">
@@ -1612,8 +1612,6 @@ Select the policies that will govern neighborhood electricity use during gamepla
 <strong>No Policies</strong> is the default.<br><br>
 Policies may be selected individually or in any combination.
 </div>
-
-<button id="refinePoliciesButton" class="policy-refine-button" onclick="togglePolicyRefinement()">🛠️ Refine the Design of Your Policies</button>
 
 <div id="policyRefinementContainer" class="policy-refinement-container">
 
@@ -1950,7 +1948,6 @@ function setSetupMode(mode){
 }
 
 let selectedGamePolicies={systemFines:false,flexibleBilling:false,systemUpdates:false,serviceDisconnection:false};
-let policyRefinementVisible=false;
 let selectedSystemUpdateWarnings={within10:true,within5:true,brownoutBlackout:true};
 let selectedSystemFineRate=50;
 let selectedHighDemandRate=30;
@@ -1992,17 +1989,15 @@ function updateGamePolicyButtons(){
     document.getElementById("systemUpdatesPolicyButton").classList.toggle("selected",selectedGamePolicies.systemUpdates);
     document.getElementById("serviceDisconnectionPolicyButton").classList.toggle("selected",selectedGamePolicies.serviceDisconnection);
 }
-function togglePolicyRefinement(){
-    policyRefinementVisible=!policyRefinementVisible;
-    document.getElementById("refinePoliciesButton").classList.toggle("selected",policyRefinementVisible);
-    updatePolicyRefinementVisibility();
-}
 function updatePolicyRefinementVisibility(){
     const container=document.getElementById("policyRefinementContainer");
-    container.classList.toggle("visible",policyRefinementVisible);
-    if(!policyRefinementVisible) return;
     const anyPolicySelected=Object.values(selectedGamePolicies).some(Boolean);
-    document.getElementById("noPolicyRefinementMessage").style.display=anyPolicySelected?"none":"block";
+
+    // Policy Design Options appear automatically whenever at least one
+    // Game Policy is selected and disappear when no policies are selected.
+    container.classList.toggle("visible",anyPolicySelected);
+    document.getElementById("noPolicyRefinementMessage").style.display="none";
+
     document.getElementById("systemFinesRefinement").classList.toggle("visible",selectedGamePolicies.systemFines);
     document.getElementById("flexibleBillingRefinement").classList.toggle("visible",selectedGamePolicies.flexibleBilling);
     document.getElementById("systemUpdatesRefinement").classList.toggle("visible",selectedGamePolicies.systemUpdates);
@@ -2165,8 +2160,8 @@ function establishGridParameters(){
         state.randomized=true;
     }else{
         const capacity=parseInt(document.getElementById("initialCapacityInput").value);
-        if(isNaN(capacity)||capacity<30||capacity>50){
-            showMessage("Invalid Grid Capacity","Initial capacity must be between <strong>30 and 50 electrons</strong>.","⚡");
+        if(isNaN(capacity)||capacity<20||capacity>50){
+            showMessage("Invalid Grid Capacity","Initial capacity must be between <strong>20 and 50 electrons</strong>.","⚡");
             return false;
         }
         const limit=parseInt(document.getElementById("brownoutLimitInput").value);
