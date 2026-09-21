@@ -1488,11 +1488,24 @@ button.action-btn:hover {
 
 <div id="setupView" class="setup-box">
 
+<!-- ============================================================
+     INITIALIZATION STEP 1: ADD NEIGHBORS
+     ============================================================ -->
+
+<div id="playerSetupView">
+
 <h3>Neighborhood Initialization Portal</h3>
 
 <p style="color:var(--text-muted);margin-top:-10px;font-size:0.9rem;">
-Register the neighbors currently sitting at your table.
-Then choose whether to establish the grid parameters manually or randomize them.
+Add the neighbors currently sitting at your table.
+</p>
+
+<div class="setup-section">
+
+<h4>🏠 Add Neighbors</h4>
+
+<p style="color:var(--text-muted);font-size:0.9rem;">
+Enter each player's name below and click <strong>Add Neighbor</strong>.
 </p>
 
 <div class="flex-row">
@@ -1501,6 +1514,26 @@ Then choose whether to establish the grid parameters manually or randomize them.
 </div>
 
 <div id="interimList" style="margin-top:15px;font-size:0.9rem;color:var(--text-muted);"></div>
+
+</div>
+
+<div class="flex-row" style="margin-top:20px;">
+<button onclick="finalizePlayers()" style="width:100%;background:var(--primary);color:#0b0f19;">Finalize Players and Go to Game Set-up →</button>
+</div>
+
+</div>
+
+<!-- ============================================================
+     INITIALIZATION STEP 2: GAME SETUP
+     ============================================================ -->
+
+<div id="gameSetupView" style="display:none;">
+
+<h3>Neighborhood Initialization Portal</h3>
+
+<p style="color:var(--text-muted);margin-top:-10px;font-size:0.9rem;">
+Establish the grid parameters and select the policies that will govern the game.
+</p>
 
 <div class="setup-section">
 
@@ -1636,6 +1669,10 @@ If more than one enabled warning applies to a purchase, only the <strong>most se
 </div>
 
 </div>
+<!-- END gameSetupView -->
+
+</div>
+<!-- END setupView -->
 
 <div id="managerView" style="display:none;">
 
@@ -2011,6 +2048,25 @@ function appendLog(msg){
     element.innerText=`[Rd ${state.round}] ${msg}`;
     log.insertBefore(element,log.firstChild);
     saveGameProgress();
+}
+
+async function finalizePlayers(){
+    if(players.length===0){
+        await showMessage(
+            "No Neighbors Registered",
+            "Please register at least one neighbor before continuing to game set-up.",
+            "🏠"
+        );
+        return;
+    }
+
+    document.getElementById("playerSetupView").style.display="none";
+    document.getElementById("gameSetupView").style.display="block";
+
+    window.scrollTo({
+        top:0,
+        behavior:"smooth"
+    });
 }
 
 async function registerNeighbor(){
