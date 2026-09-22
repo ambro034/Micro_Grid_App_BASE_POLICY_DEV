@@ -1584,11 +1584,23 @@ Enter each player's name below and click <strong>Add Neighbor</strong>.
   <div id="tutorialPlayerCard" class="player-card active-turn">
     <div class="player-header"><span id="tutorialPlayerName" class="player-title">🏠 Tutorial Player</span><span class="turn-badge active">Active Turn</span></div>
     <div class="payment-summary">
-      <div class="payment-summary-title">💰 Practice Player Summary</div>
-      <div class="payment-row"><span>Wallet Cash</span><strong id="tutorialCash" style="color:var(--success);">$500</strong></div>
-      <div class="payment-row"><span>Electricity from Goods</span><strong id="tutorialGoodsE">0 e</strong></div>
-      <div class="payment-row"><span>Electricity from Solar</span><strong id="tutorialSolarE">0 e</strong></div>
-      <div class="payment-row"><span>Happiness</span><strong id="tutorialHappiness">0 😊</strong></div>
+      <div class="payment-summary-title">💰 Financial Summary</div>
+      <div class="payment-row"><span>Pay Day</span><strong id="tutorialPayDay" style="color:var(--success);">+$500</strong></div>
+      <div class="payment-row"><span>Utility Bill</span><strong id="tutorialUtilityBill" style="color:var(--danger);">-$0</strong></div>
+      <div class="payment-row"><span>Grid Fee</span><strong id="tutorialGridFee" style="color:var(--danger);">-$0</strong></div>
+    </div>
+    <button id="tutorialDetailsToggle" class="player-details-toggle" onclick="toggleTutorialPlayerDetails()">Show Player Details</button>
+    <div id="tutorialPlayerDetails" class="player-details">
+      <table class="scorecard-table">
+        <thead><tr><th>Wallet Cash</th><th>e From Goods (-)</th><th>e From Solar (+)</th><th>Total Net e Balance</th><th>Happiness Index</th></tr></thead>
+        <tbody><tr>
+          <td id="tutorialCash" style="color:var(--success);font-weight:bold;">$3,000</td>
+          <td id="tutorialGoodsE" style="color:var(--yellow-card);font-weight:bold;">0 e</td>
+          <td id="tutorialSolarE" style="color:var(--blue-card);font-weight:bold;">0 e</td>
+          <td id="tutorialNetE" style="font-weight:bold;color:var(--success);">0 e</td>
+          <td id="tutorialHappiness" style="color:#a855f7;font-weight:bold;">0 😊</td>
+        </tr></tbody>
+      </table>
     </div>
     <div class="tutorial-action-area card-selection">
       <button id="tutorialFinishButton" class="no-purchase-button tutorial-muted" onclick="tutorialFinishTurn()">⏭️ No Purchase This Turn -- Finish Round</button>
@@ -2232,12 +2244,12 @@ function appendLog(msg){
 // ---------------------------------------------------------------------------
 // OPTIONAL GUIDED TUTORIAL
 // ---------------------------------------------------------------------------
-let tutorialState={active:false,step:1,cash:3000,goodsE:0,solarE:0,happiness:0,demand:4,capacity:10,brownouts:0};
+let tutorialState={active:false,step:1,cash:3000,goodsE:0,solarE:0,happiness:0,demand:4,capacity:10,brownouts:0,gridFee:0,showDetails:false};
 
 function startTutorial(){
     if(players.length===0){showMessage("No Neighbors Registered","Please register at least one neighbor before starting the tutorial.","🏠");return;}
     updateDynamicGridSetup();
-    tutorialState={active:true,step:1,cash:3000,goodsE:0,solarE:0,happiness:0,demand:4,capacity:10,brownouts:0};
+    tutorialState={active:true,step:1,cash:3000,goodsE:0,solarE:0,happiness:0,demand:4,capacity:10,brownouts:0,gridFee:0,showDetails:false};
     document.getElementById("playerSetupView").style.display="none";
     document.getElementById("gameSetupView").style.display="none";
     document.getElementById("tutorialView").style.display="block";
@@ -2253,22 +2265,56 @@ function tutorialClearHighlights(){
     document.getElementById("tutorialNextButton").style.display="none";
 }
 function tutorialEnable(id){const el=document.getElementById(id);if(el){el.classList.remove("tutorial-muted");el.classList.add("tutorial-highlight");}}
+function toggleTutorialPlayerDetails(){
+    tutorialState.showDetails=!tutorialState.showDetails;
+    const details=document.getElementById("tutorialPlayerDetails");
+    const button=document.getElementById("tutorialDetailsToggle");
+    if(details) details.className=tutorialState.showDetails?"player-details show":"player-details";
+    if(button) button.innerText=tutorialState.showDetails?"Hide Player Details":"Show Player Details";
+}
+function tutorialElectricitySummary(){
+    const t=tutorialState;
+    const net=t.solarE-t.goodsE;
+    const utilityBill=net<0?Math.abs(net)*20:0;
+    const surplus=net>0?net*20:0;
+    const netLabel=`${net>0?"+":""}${net}e`;
+    if(net<0){
+        return `<div style="margin-top:10px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);"><strong>Current electricity:</strong> Goods ${t.goodsE}e − Solar ${t.solarE}e = <strong>${netLabel} net</strong>.<br>At <strong>$20 per electron</strong>, the current Utility Bill is <strong>$${utilityBill.toLocaleString()}</strong>.</div>`;
+    }
+    if(net>0){
+        return `<div style="margin-top:10px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);"><strong>Current electricity:</strong> Goods ${t.goodsE}e − Solar ${t.solarE}e = <strong>${netLabel} net</strong>.<br>Because you are producing ${net}e more than you use, you are paid <strong>$${surplus.toLocaleString()}</strong> at $20 per electron. This is added to Pay Day.</div>`;
+    }
+    return `<div style="margin-top:10px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);"><strong>Current electricity:</strong> Goods ${t.goodsE}e − Solar ${t.solarE}e = <strong>0e net</strong>.<br>At <strong>$20 per electron</strong>, the current Utility Bill is <strong>$0</strong>.</div>`;
+}
 function renderTutorial(){
     const t=tutorialState,total=10;
     document.getElementById("tutorialStepLabel").innerText=`Step ${t.step} of ${total}`;
     document.getElementById("tutorialProgressBar").style.width=`${(t.step/total)*100}%`;
+    const netE=t.solarE-t.goodsE;
+    const utilityBill=netE<0?Math.abs(netE)*20:0;
+    const surplusPayment=netE>0?netE*20:0;
+    document.getElementById("tutorialPayDay").innerText=`+$${(500+surplusPayment).toLocaleString()}`;
+    document.getElementById("tutorialUtilityBill").innerText=`-$${utilityBill.toLocaleString()}`;
+    document.getElementById("tutorialGridFee").innerText=`-$${(t.gridFee||0).toLocaleString()}`;
     document.getElementById("tutorialCash").innerText=`$${t.cash.toLocaleString()}`;
     document.getElementById("tutorialGoodsE").innerText=`${t.goodsE} e`;
     document.getElementById("tutorialSolarE").innerText=`${t.solarE} e`;
+    const netEl=document.getElementById("tutorialNetE");
+    netEl.innerText=`${netE>0?"+":""}${netE} e`;
+    netEl.style.color=netE>=0?"var(--success)":"var(--danger)";
     document.getElementById("tutorialHappiness").innerText=`${t.happiness} 😊`;
+    const details=document.getElementById("tutorialPlayerDetails");
+    const detailsButton=document.getElementById("tutorialDetailsToggle");
+    if(details) details.className=t.showDetails?"player-details show":"player-details";
+    if(detailsButton) detailsButton.innerText=t.showDetails?"Hide Player Details":"Show Player Details";
     document.getElementById("tutorialDemandValue").innerText=`${t.demand} / ${t.capacity} e`;
     document.getElementById("tutorialBrownoutValue").innerText=`${t.brownouts} / 2`;
     tutorialClearHighlights();
     const title=document.getElementById("tutorialGuideTitle"),text=document.getElementById("tutorialGuideText"),next=document.getElementById("tutorialNextButton");
     if(t.step===1){
         title.innerText="Meet Your Player Card — and Your Goal";
-        text.innerHTML="Your player card tracks <strong>Wallet Cash</strong>, electricity used by Goods, electricity supplied by Solar, and your <strong>Happiness</strong> score. <strong>The goal of the game is to accumulate as many Happiness Points as possible.</strong> Goods and Solar can add Happiness, but your choices also affect the shared micro-grid.";
-        tutorialEnable("tutorialPlayerCard");next.style.display="block";next.innerText="Continue →";
+        text.innerHTML="The top of your player card shows the same <strong>Pay Day, Utility Bill, and Grid Fee</strong> summary used in the real game. Your normal Pay Day is <strong>$500</strong>. Electricity is settled at <strong>$20 per electron</strong>: when you use more electricity than you produce, you pay $20 for each net electron used; when you produce more electricity than you use, you are paid $20 for each surplus electron. Your <strong>Wallet Cash</strong>, electricity used by <strong>Goods</strong>, electricity supplied by <strong>Solar</strong>, net electricity balance, and your <strong>Happiness</strong> score are under <strong>Show Player Details</strong>. Select that button to view them. <strong>The goal of the game is to accumulate as many Happiness Points as possible.</strong>";
+        tutorialEnable("tutorialDetailsToggle");next.style.display="block";next.innerText="Continue →";
     }else if(t.step===2){
         title.innerText="Purchase a Card and Continue Your Turn";
         text.innerHTML="Select the actual <strong>Goods Card G04</strong>. You will first see the same <strong>Confirm Purchase</strong> window used in the game. After the purchase is finalized, the game asks whether to <strong>Continue Round</strong> or <strong>Finish for This Round</strong>. For this step, choose <strong>Continue Round</strong> so you can make another purchase.";
@@ -2307,6 +2353,7 @@ function renderTutorial(){
         text.innerHTML="Remember: <strong>the goal is to finish the game with as many Happiness Points as possible.</strong> The tutorial is only practice; none of these purchases, cash changes, Happiness Points, brownouts, or grid changes carry into the actual game.";
         next.style.display="block";next.innerText="Finish Tutorial and Go to Game Set-up →";
     }
+    text.innerHTML+=tutorialElectricitySummary();
 }
 function tutorialNext(){
     if(tutorialState.step===10){finishTutorial();return;}
@@ -2348,9 +2395,9 @@ async function tutorialShowGridUpgrade(expected){
     const choice=await openGameModal({title:"Grid Capacity Upgrade",body,icon:"🔧",buttons:[{text:"Purchase Solar Panel",className:"primary",value:"solar"},{text:"Approve Upgrade",className:"purple",value:"upgrade"}]});
     if(choice!==expected){await showMessage("Tutorial Choice",expected==="upgrade"?"For this step, select <strong>Approve Upgrade</strong>. You will practice the Solar Panel option immediately afterward.":"For this step, select <strong>Purchase Solar Panel</strong> to start the practice Solar Panel-only round.","🎓","Try Again");return tutorialShowGridUpgrade(expected);}
     if(expected==="upgrade"){
-        tutorialState.capacity=15;tutorialState.step=7;renderTutorial();
+        tutorialState.capacity=15;tutorialState.gridFee=20;tutorialState.step=7;renderTutorial();
         await showMessage("Grid Capacity Upgraded",`The practice grid received <strong>+5e</strong> of capacity, just as an approved upgrade does in the game. The real game also adds the permanent <strong>$20/round</strong> grid fee for this first brownout.<br><br>For teaching purposes, the tutorial will now recreate the brownout state so you can practice the Solar Panel alternative.`,"🔧","Practice Solar Alternative");
-        tutorialState.capacity=10;renderTutorial();
+        tutorialState.capacity=10;tutorialState.gridFee=0;renderTutorial();
     }else{
         await showMessage("☀️ Solar Panel Purchase Opportunity",`<div class="modal-event success"><strong>Solar Panel purchasing is now available.</strong><br><br>Every active player with <strong>$2,000 or more in Wallet Cash</strong> receives one special Solar Panel-only turn.</div><div style="margin-top:15px;color:var(--text-muted);font-size:0.85rem;"><ul><li>Only Solar Panel cards may be purchased.</li><li>Goods cards are temporarily unavailable.</li><li>Each eligible player may choose <strong>No Purchase This Turn -- Finish Round</strong>.</li></ul></div>`,"☀️","Begin Solar Panel Turns");
         tutorialState.step=8;renderTutorial();
@@ -2360,7 +2407,7 @@ async function tutorialShowGridUpgrade(expected){
 async function tutorialBuySolar(){
     if(tutorialState.step!==8)return;const card=solarPanelCards.find(c=>c.id==="SP01");if(!await tutorialConfirmCard(card,"solar"))return;
     tutorialState.cash-=card.price;tutorialState.solarE+=card.electrons;tutorialState.happiness+=card.happiness;tutorialState.demand=Math.max(0,tutorialState.demand-card.electrons);
-    await showMessage("Solar Panel Special Round Complete",`<div class="modal-event success"><strong>SP01 was purchased during the Solar Panel-only opportunity.</strong><br><br>The +10e of solar generation resolves the practice capacity problem, so the grid capacity upgrade is skipped and normal gameplay can resume.</div>`,"☀️","Continue Tutorial");
+    await showMessage("Solar Panel Special Round Complete",`<div class="modal-event success"><strong>SP01 was purchased during the Solar Panel-only opportunity.</strong><br><br>The +10e of solar generation resolves the practice capacity problem, so the grid capacity upgrade is skipped and normal gameplay can resume. Your player card also updates your net electricity balance and the resulting $20-per-electron utility payment or surplus income.</div>`,"☀️","Continue Tutorial");
     tutorialState.step=9;renderTutorial();window.scrollTo({top:0,behavior:"smooth"});
 }
 function finishTutorial(){tutorialState.active=false;document.getElementById("tutorialView").style.display="none";document.getElementById("gameSetupView").style.display="block";updateDynamicGridSetup();window.scrollTo({top:0,behavior:"smooth"});}
