@@ -1452,6 +1452,42 @@ button.action-btn:hover {
     }
 }
 
+
+/* Guided tutorial --------------------------------------------------------- */
+.tutorial-secondary-button{
+    width:100%;
+    margin-top:10px;
+    background:transparent;
+    color:var(--primary);
+    border:1px solid var(--primary);
+    font-size:0.86rem;
+    padding:10px 14px;
+}
+.tutorial-secondary-button:hover{background:rgba(250,204,21,0.08);}
+.tutorial-shell{margin-top:18px;}
+.tutorial-guide{
+    border:2px solid var(--primary);
+    border-radius:10px;
+    padding:16px;
+    margin-bottom:18px;
+    background:rgba(250,204,21,0.07);
+}
+.tutorial-step-label{font-size:0.76rem;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+.tutorial-guide-title{font-weight:800;font-size:1.05rem;margin-bottom:7px;}
+.tutorial-guide-text{color:var(--text-muted);font-size:.9rem;line-height:1.5;}
+.tutorial-demo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:15px;}
+.tutorial-stat{border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;background:var(--surface);}
+.tutorial-stat-label{font-size:.7rem;color:var(--text-muted);text-transform:uppercase;font-weight:700;}
+.tutorial-stat-value{font-size:1.15rem;font-weight:800;margin-top:4px;}
+.tutorial-action-area{margin-top:15px;padding-top:15px;border-top:1px solid var(--border);}
+.tutorial-highlight{outline:3px solid var(--primary)!important;outline-offset:3px;box-shadow:0 0 0 5px rgba(250,204,21,.12);}
+.tutorial-muted{opacity:.42;pointer-events:none;}
+.tutorial-card-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px;}
+.tutorial-card-row .game-card{width:100%;min-width:0;}
+.tutorial-progress{height:6px;background:var(--border);border-radius:999px;overflow:hidden;margin-top:12px;}
+.tutorial-progress-bar{height:100%;background:var(--primary);transition:width .2s ease;}
+@media(max-width:600px){.tutorial-demo-grid{grid-template-columns:1fr}.tutorial-card-row{grid-template-columns:1fr}}
+
 </style>
 
 </head>
@@ -1517,10 +1553,57 @@ Enter each player's name below and click <strong>Add Neighbor</strong>.
 
 </div>
 
-<div class="flex-row" style="margin-top:20px;">
+<div style="margin-top:20px;">
 <button onclick="finalizePlayers()" style="width:100%;background:var(--primary);color:#0b0f19;">Finalize Players and Go to Game Set-up →</button>
+<button onclick="startTutorial()" class="tutorial-secondary-button">🎓 Finalize Players and Go to Tutorial Before Moving On</button>
 </div>
 
+</div>
+
+<!-- ============================================================
+     OPTIONAL GUIDED TUTORIAL
+     ============================================================ -->
+<div id="tutorialView" style="display:none;">
+<h3>🎓 Neighborhood Micro-Grid Tutorial</h3>
+<p style="color:var(--text-muted);margin-top:-10px;font-size:0.9rem;">Complete this short practice round to learn the core game mechanics. Nothing you do here affects the actual game.</p>
+
+<div class="tutorial-shell">
+  <div id="tutorialGuide" class="tutorial-guide">
+    <div id="tutorialStepLabel" class="tutorial-step-label">Step 1 of 7</div>
+    <div id="tutorialGuideTitle" class="tutorial-guide-title">Meet Your Player Card</div>
+    <div id="tutorialGuideText" class="tutorial-guide-text"></div>
+    <div class="tutorial-progress"><div id="tutorialProgressBar" class="tutorial-progress-bar" style="width:14.3%;"></div></div>
+  </div>
+
+  <div class="tutorial-demo-grid">
+    <div class="tutorial-stat"><div class="tutorial-stat-label">Current Round</div><div class="tutorial-stat-value">Practice</div></div>
+    <div id="tutorialDemandStat" class="tutorial-stat"><div class="tutorial-stat-label">Total Demand vs Capacity</div><div id="tutorialDemandValue" class="tutorial-stat-value">4 / 10 e</div></div>
+    <div class="tutorial-stat"><div class="tutorial-stat-label">Brownouts</div><div id="tutorialBrownoutValue" class="tutorial-stat-value">0 / 2</div></div>
+  </div>
+
+  <div id="tutorialPlayerCard" class="player-card active-turn">
+    <div class="player-header"><span id="tutorialPlayerName" class="player-title">🏠 Tutorial Player</span><span class="turn-badge active">Active Turn</span></div>
+    <div class="payment-summary">
+      <div class="payment-summary-title">💰 Practice Player Summary</div>
+      <div class="payment-row"><span>Wallet Cash</span><strong id="tutorialCash" style="color:var(--success);">$500</strong></div>
+      <div class="payment-row"><span>Electricity from Goods</span><strong id="tutorialGoodsE">0 e</strong></div>
+      <div class="payment-row"><span>Electricity from Solar</span><strong id="tutorialSolarE">0 e</strong></div>
+      <div class="payment-row"><span>Happiness</span><strong id="tutorialHappiness">0 😊</strong></div>
+    </div>
+    <div class="tutorial-action-area">
+      <button id="tutorialFinishButton" class="no-purchase-button tutorial-muted" onclick="tutorialFinishTurn()">⏭️ No Purchase This Turn -- Finish Round</button>
+      <div class="tutorial-card-row">
+        <button id="tutorialGoodsButton" class="game-card goods tutorial-muted" onclick="tutorialBuyGoods()"><div class="game-card-price">$160</div><div class="game-card-details">⚡ 4e<br>😊 +1</div><div class="card-count">Practice Goods Card</div></button>
+        <button id="tutorialSolarButton" class="game-card solar tutorial-muted" onclick="tutorialBuySolar()"><div class="game-card-price">$200</div><div class="game-card-details">⚡ +4e<br>😊 +2</div><div class="card-count">Practice Solar Panel</div></button>
+      </div>
+      <button id="tutorialBrownoutButton" class="mode-button tutorial-muted" style="width:100%;max-width:none;margin-top:12px;" onclick="tutorialCauseBrownout()">⚠️ Make a Practice Purchase That Exceeds Capacity</button>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+    <button id="tutorialNextButton" onclick="tutorialNext()" style="flex:1;min-width:180px;">Continue →</button>
+    <button onclick="finishTutorial()" class="action-btn" style="flex:0 1 auto;">Skip Remaining Tutorial</button>
+  </div>
 </div>
 
 <!-- ============================================================
@@ -2133,6 +2216,105 @@ function appendLog(msg){
     element.innerText=`[Rd ${state.round}] ${msg}`;
     log.insertBefore(element,log.firstChild);
     saveGameProgress();
+}
+
+
+// ---------------------------------------------------------------------------
+// OPTIONAL GUIDED TUTORIAL
+// ---------------------------------------------------------------------------
+let tutorialState={active:false,step:1,cash:500,goodsE:0,solarE:0,happiness:0,demand:4,capacity:10,brownouts:0};
+
+function startTutorial(){
+    if(players.length===0){
+        showMessage("No Neighbors Registered","Please register at least one neighbor before starting the tutorial.","🏠");
+        return;
+    }
+    updateDynamicGridSetup();
+    tutorialState={active:true,step:1,cash:500,goodsE:0,solarE:0,happiness:0,demand:4,capacity:10,brownouts:0};
+    document.getElementById("playerSetupView").style.display="none";
+    document.getElementById("gameSetupView").style.display="none";
+    document.getElementById("tutorialView").style.display="block";
+    document.getElementById("tutorialPlayerName").innerText=`🏠 ${players[0]?.name||"Tutorial Player"} (Practice)`;
+    renderTutorial();
+    window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function tutorialClearHighlights(){
+    ["tutorialPlayerCard","tutorialDemandStat","tutorialFinishButton","tutorialGoodsButton","tutorialSolarButton","tutorialBrownoutButton"].forEach(id=>{
+        const el=document.getElementById(id); if(el){el.classList.remove("tutorial-highlight");el.classList.add("tutorial-muted");}
+    });
+    document.getElementById("tutorialNextButton").style.display="none";
+}
+
+function tutorialEnable(id){const el=document.getElementById(id);if(el){el.classList.remove("tutorial-muted");el.classList.add("tutorial-highlight");}}
+
+function renderTutorial(){
+    const t=tutorialState;
+    document.getElementById("tutorialStepLabel").innerText=`Step ${t.step} of 7`;
+    document.getElementById("tutorialProgressBar").style.width=`${(t.step/7)*100}%`;
+    document.getElementById("tutorialCash").innerText=`$${t.cash.toLocaleString()}`;
+    document.getElementById("tutorialGoodsE").innerText=`${t.goodsE} e`;
+    document.getElementById("tutorialSolarE").innerText=`${t.solarE} e`;
+    document.getElementById("tutorialHappiness").innerText=`${t.happiness} 😊`;
+    document.getElementById("tutorialDemandValue").innerText=`${t.demand} / ${t.capacity} e`;
+    document.getElementById("tutorialBrownoutValue").innerText=`${t.brownouts} / 2`;
+    tutorialClearHighlights();
+    const title=document.getElementById("tutorialGuideTitle"), text=document.getElementById("tutorialGuideText"), next=document.getElementById("tutorialNextButton");
+    if(t.step===1){
+        title.innerText="Meet Your Player Card";
+        text.innerHTML="Your player card tracks your <strong>Wallet Cash</strong>, electricity used by Goods, electricity supplied by Solar, and your <strong>Happiness</strong> score. During the real game, purchases and round settlements change these values.";
+        tutorialEnable("tutorialPlayerCard"); next.style.display="block"; next.innerText="Continue →";
+    }else if(t.step===2){
+        title.innerText="Buy a Goods Card";
+        text.innerHTML="Goods provide <strong>Happiness</strong>, but they also increase electricity demand on the shared micro-grid. Select the highlighted practice Goods Card.";
+        tutorialEnable("tutorialGoodsButton");
+    }else if(t.step===3){
+        title.innerText="Finish Your Turn";
+        text.innerHTML="Players act one at a time. When you do not want to make another purchase, use <strong>No Purchase This Turn -- Finish Round</strong>. Try it now.";
+        tutorialEnable("tutorialFinishButton");
+    }else if(t.step===4){
+        title.innerText="Watch Grid Capacity";
+        text.innerHTML="The grid is shared by the entire neighborhood. Here, neighborhood demand is <strong>8e</strong> while capacity is <strong>10e</strong>. Purchases that push demand beyond capacity can cause a brownout.";
+        t.demand=8; document.getElementById("tutorialDemandValue").innerText="8 / 10 e"; tutorialEnable("tutorialDemandStat"); next.style.display="block"; next.innerText="Try a Brownout →";
+    }else if(t.step===5){
+        title.innerText="See What Causes a Brownout";
+        text.innerHTML="The practice grid is using <strong>8 of 10 electrons</strong>. The highlighted purchase adds 4e, which would push demand to 12e. Make the practice purchase to see the result.";
+        tutorialEnable("tutorialBrownoutButton");
+    }else if(t.step===6){
+        title.innerText="Add Solar Generation";
+        text.innerHTML="Solar panels add electricity generation to the shared micro-grid while providing benefits to the purchasing player. Select the highlighted practice Solar Panel to add <strong>4e</strong> of solar generation.";
+        tutorialEnable("tutorialSolarButton");
+    }else{
+        title.innerText="Policies and Solar Programs Can Change the Rules";
+        text.innerHTML="In the actual game, <strong>Game Policies</strong> can add customer warnings, flexible electricity rates, fines, or service disconnection. The <strong>Solar Programs</strong> setting determines whether players may also cooperate on Community Solar. You will choose these options on the next screen.<br><br><strong>Your practice actions will now be discarded.</strong> Your registered players and actual game will start fresh.";
+        next.style.display="block"; next.innerText="Finish Tutorial and Go to Game Set-up →";
+    }
+}
+
+function tutorialNext(){
+    if(tutorialState.step===7){finishTutorial();return;}
+    tutorialState.step+=1;renderTutorial();window.scrollTo({top:0,behavior:"smooth"});
+}
+function tutorialBuyGoods(){
+    if(tutorialState.step!==2)return;
+    tutorialState.cash-=160;tutorialState.goodsE=4;tutorialState.happiness+=1;tutorialState.demand=8;tutorialState.step=3;renderTutorial();
+}
+function tutorialFinishTurn(){if(tutorialState.step!==3)return;tutorialState.step=4;renderTutorial();}
+function tutorialCauseBrownout(){
+    if(tutorialState.step!==5)return;
+    tutorialState.demand=12;tutorialState.brownouts=1;
+    showMessage("Practice Brownout","That purchase pushed neighborhood demand to <strong>12e</strong>, above the grid's <strong>10e</strong> capacity. In the actual game, the consequences depend on the grid parameters and policies selected.","⚠️","Continue Tutorial").then(()=>{tutorialState.step=6;renderTutorial();window.scrollTo({top:0,behavior:"smooth"});});
+}
+function tutorialBuySolar(){
+    if(tutorialState.step!==6)return;
+    tutorialState.cash-=200;tutorialState.solarE=4;tutorialState.happiness+=2;tutorialState.demand=8;tutorialState.step=7;renderTutorial();window.scrollTo({top:0,behavior:"smooth"});
+}
+function finishTutorial(){
+    tutorialState.active=false;
+    document.getElementById("tutorialView").style.display="none";
+    document.getElementById("gameSetupView").style.display="block";
+    updateDynamicGridSetup();
+    window.scrollTo({top:0,behavior:"smooth"});
 }
 
 async function finalizePlayers(){
