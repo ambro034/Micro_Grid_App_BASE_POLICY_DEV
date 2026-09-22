@@ -2476,34 +2476,48 @@ async function purchaseCommunitySolar(pIdx){
     if(!card||card.quantity<=0||card.price>spendableCash){await showMessage("Card Unavailable","That Solar Panel card is no longer available for this purchase.","☀️");return;}
 
     const communityBenefit=Math.max(0,card.electrons-2);
-    const allocationRows=participantIndices.map(index=>`<div style="display:grid;grid-template-columns:minmax(120px,1fr) minmax(100px,0.8fr) minmax(100px,0.8fr);gap:8px;align-items:center;margin-top:10px;"><strong>${players[index].name}</strong><label style="font-size:0.8rem;">Payment ($)<input class="modal-input community-payment" data-player="${index}" type="number" min="0" max="${Math.floor(players[index].cash/100)*100}" step="100" value="0" style="margin-top:4px;"></label><label style="font-size:0.8rem;">Electrons<input class="modal-input community-electrons" data-player="${index}" type="number" min="0" max="${communityBenefit}" step="1" value="0" style="margin-top:4px;"></label></div>`).join("");
-    const allocationBody=`<div class="modal-event"><strong>Community Solar Contract</strong><br><br>Solar Panel: <strong>${card.id}</strong><br>Purchase Cost: <strong>$${card.price.toLocaleString()}</strong><br>Total Panel Capacity: <strong>${card.electrons}e</strong><br>Grid Manager Retains: <strong>2e</strong><br>Community Solar Benefit to Allocate: <strong>${communityBenefit}e</strong></div><div style="margin-top:15px;font-size:0.85rem;color:var(--text-muted);">Assign each participant's payment in <strong>$100 increments</strong> and the electrons they will receive in every future round. The full purchase cost and full community solar benefit must be allocated before the contract can be finalized.</div>${allocationRows}<div style="margin-top:15px;padding:12px;background:#0b1220;border:1px solid var(--border);border-radius:8px;"><div>Cost Remaining: <strong id="communityCostRemaining">$${card.price.toLocaleString()}</strong></div><div style="margin-top:5px;">Electrons Remaining: <strong id="communityElectronsRemaining">${communityBenefit}e</strong></div><div id="communityAllocationError" style="margin-top:8px;color:var(--danger);font-size:0.85rem;"></div></div>`;
-    const allocationPromise=openGameModal({title:"Finalize Community Solar Contract",icon:"📄",body:allocationBody,buttons:[{text:"Cancel",className:"secondary",value:false},{text:"Finalize Community Solar Contract",className:"success",value:true}]});
-    const updateRemaining=()=>{
-        const payments=[...document.querySelectorAll(".community-payment")].reduce((sum,input)=>sum+(Number(input.value)||0),0);
-        const electrons=[...document.querySelectorAll(".community-electrons")].reduce((sum,input)=>sum+(Number(input.value)||0),0);
-        const costEl=document.getElementById("communityCostRemaining");
-        const electronEl=document.getElementById("communityElectronsRemaining");
-        if(costEl) costEl.innerText=`$${(card.price-payments).toLocaleString()}`;
-        if(electronEl) electronEl.innerText=`${communityBenefit-electrons}e`;
-    };
-    document.querySelectorAll(".community-payment,.community-electrons").forEach(input=>input.addEventListener("input",updateRemaining));
-    const allocationConfirmed=await allocationPromise;
-    if(!allocationConfirmed) return;
+    let communityPayments=Object.fromEntries(participantIndices.map(index=>[index,0]));
+    let communityElectronAllocations=Object.fromEntries(participantIndices.map(index=>[index,0]));
+    let payments={}; let electronAllocations={}; let totalPayment=0; let totalElectrons=0;
 
-    const payments={}; const electronAllocations={}; let totalPayment=0; let totalElectrons=0; let invalidMessage="";
-    participantIndices.forEach(index=>{
-        const payInput=document.querySelector(`.community-payment[data-player="${index}"]`);
-        const electronInput=document.querySelector(`.community-electrons[data-player="${index}"]`);
-        const payment=Number(payInput?.value)||0; const electrons=Number(electronInput?.value)||0;
-        payments[index]=payment; electronAllocations[index]=electrons; totalPayment+=payment; totalElectrons+=electrons;
-        if(payment<0||payment%100!==0) invalidMessage="All payments must be non-negative and entered in $100 increments.";
-        if(payment>players[index].cash) invalidMessage=`${players[index].name} cannot contribute more than their available Wallet Cash.`;
-        if(electrons<0||!Number.isInteger(electrons)) invalidMessage="Electron allocations must be non-negative whole numbers.";
-    });
-    if(!invalidMessage&&totalPayment!==card.price) invalidMessage=`The participant payments must total exactly $${card.price.toLocaleString()}.`;
-    if(!invalidMessage&&totalElectrons!==communityBenefit) invalidMessage=`The electron allocations must total exactly ${communityBenefit}e.`;
-    if(invalidMessage){await showMessage("Community Solar Contract Incomplete",invalidMessage,"📄");return;}
+    while(true){
+        const allocationRows=participantIndices.map(index=>`<div style="display:grid;grid-template-columns:minmax(120px,1fr) minmax(100px,0.8fr) minmax(100px,0.8fr);gap:8px;align-items:center;margin-top:10px;"><strong>${players[index].name}</strong><label style="font-size:0.8rem;">Payment ($)<input class="modal-input community-payment" data-player="${index}" type="number" min="0" max="${Math.floor(players[index].cash/100)*100}" step="100" value="${communityPayments[index]}" style="margin-top:4px;"></label><label style="font-size:0.8rem;">Electrons<input class="modal-input community-electrons" data-player="${index}" type="number" min="0" max="${communityBenefit}" step="1" value="${communityElectronAllocations[index]}" style="margin-top:4px;"></label></div>`).join("");
+        const initialPayment=Object.values(communityPayments).reduce((sum,value)=>sum+(Number(value)||0),0);
+        const initialElectrons=Object.values(communityElectronAllocations).reduce((sum,value)=>sum+(Number(value)||0),0);
+        const allocationBody=`<div class="modal-event"><strong>Community Solar Contract</strong><br><br>Solar Panel: <strong>${card.id}</strong><br>Purchase Cost: <strong>$${card.price.toLocaleString()}</strong><br>Total Panel Capacity: <strong>${card.electrons}e</strong><br>Grid Manager Retains: <strong>2e</strong><br>Community Solar Benefit to Allocate: <strong>${communityBenefit}e</strong></div><div style="margin-top:15px;font-size:0.85rem;color:var(--text-muted);">Assign each participant's payment in <strong>$100 increments</strong> and the electrons they will receive in every future round. The full purchase cost and full community solar benefit must be allocated before the contract can be finalized.</div>${allocationRows}<div style="margin-top:15px;padding:12px;background:#0b1220;border:1px solid var(--border);border-radius:8px;"><div>Cost Remaining: <strong id="communityCostRemaining">$${(card.price-initialPayment).toLocaleString()}</strong></div><div style="margin-top:5px;">Electrons Remaining: <strong id="communityElectronsRemaining">${communityBenefit-initialElectrons}e</strong></div><div id="communityAllocationError" style="margin-top:8px;color:var(--danger);font-size:0.85rem;"></div></div>`;
+        const allocationPromise=openGameModal({title:"Finalize Community Solar Contract",icon:"📄",body:allocationBody,buttons:[{text:"Cancel",className:"secondary",value:false},{text:"Finalize Community Solar Contract",className:"success",value:true}]});
+        const updateRemaining=()=>{
+            const paymentInputs=[...document.querySelectorAll(".community-payment")];
+            const electronInputs=[...document.querySelectorAll(".community-electrons")];
+            paymentInputs.forEach(input=>communityPayments[Number(input.dataset.player)]=Number(input.value)||0);
+            electronInputs.forEach(input=>communityElectronAllocations[Number(input.dataset.player)]=Number(input.value)||0);
+            const paymentTotal=paymentInputs.reduce((sum,input)=>sum+(Number(input.value)||0),0);
+            const electronTotal=electronInputs.reduce((sum,input)=>sum+(Number(input.value)||0),0);
+            const costEl=document.getElementById("communityCostRemaining");
+            const electronEl=document.getElementById("communityElectronsRemaining");
+            if(costEl) costEl.innerText=`$${(card.price-paymentTotal).toLocaleString()}`;
+            if(electronEl) electronEl.innerText=`${communityBenefit-electronTotal}e`;
+        };
+        document.querySelectorAll(".community-payment,.community-electrons").forEach(input=>input.addEventListener("input",updateRemaining));
+        const allocationConfirmed=await allocationPromise;
+        if(!allocationConfirmed) return;
+
+        payments={}; electronAllocations={}; totalPayment=0; totalElectrons=0;
+        let invalidMessage="";
+        participantIndices.forEach(index=>{
+            const payment=Number(communityPayments[index])||0;
+            const electrons=Number(communityElectronAllocations[index])||0;
+            payments[index]=payment; electronAllocations[index]=electrons; totalPayment+=payment; totalElectrons+=electrons;
+            if(payment<0||payment%100!==0) invalidMessage="All payments must be non-negative and entered in $100 increments.";
+            if(payment>players[index].cash) invalidMessage=`${players[index].name} cannot contribute more than their available Wallet Cash.`;
+            if(electrons<0||!Number.isInteger(electrons)) invalidMessage="Electron allocations must be non-negative whole numbers.";
+        });
+        if(!invalidMessage&&totalPayment!==card.price) invalidMessage=`The participant payments must total exactly $${card.price.toLocaleString()}.`;
+        if(!invalidMessage&&totalElectrons!==communityBenefit) invalidMessage=`The electron allocations must total exactly ${communityBenefit}e.`;
+        if(!invalidMessage) break;
+
+        await showMessage("Community Solar Contract Incomplete",`${invalidMessage}<br><br>You will now be returned to the Community Solar Contract so you can correct the allocation.`,"📄");
+    }
     if(card.quantity<=0){await showMessage("Card Unavailable","That Solar Panel card is no longer available.","☀️");return;}
 
     participantIndices.forEach(index=>{
