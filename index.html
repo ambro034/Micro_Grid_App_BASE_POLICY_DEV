@@ -1590,15 +1590,20 @@ Enter each player's name below and click <strong>Add Neighbor</strong>.
       <div class="payment-row"><span>Electricity from Solar</span><strong id="tutorialSolarE">0 e</strong></div>
       <div class="payment-row"><span>Happiness</span><strong id="tutorialHappiness">0 😊</strong></div>
     </div>
-    <div class="tutorial-action-area">
+    <div class="tutorial-action-area card-selection">
       <button id="tutorialFinishButton" class="no-purchase-button tutorial-muted" onclick="tutorialFinishTurn()">⏭️ No Purchase This Turn -- Finish Round</button>
-      <div class="tutorial-card-row">
+
+      <h4 style="margin-top:20px;">🛒 Choose a Goods Card</h4>
+      <div class="card-options">
         <button id="tutorialGoodsButton" class="game-card goods tutorial-muted" onclick="tutorialBuyGoods()"><div class="game-card-price">$400</div><div class="game-card-details">⚡ 4e<br>😊 +4</div><div class="card-count">Goods Card G04</div></button>
         <button id="tutorialContinueGoodsButton" class="game-card goods tutorial-muted" onclick="tutorialBuySecondGoods()"><div class="game-card-price">$320</div><div class="game-card-details">⚡ 3e<br>😊 +3</div><div class="card-count">Goods Card G03</div></button>
+        <button id="tutorialBrownoutButton" class="game-card goods tutorial-muted" onclick="tutorialCauseBrownout()"><div class="game-card-price">$320</div><div class="game-card-details">⚡ 4e<br>😊 +3</div><div class="card-count">Goods Card G12 — Brownout Example</div></button>
+      </div>
+
+      <h4 style="margin-top:20px;">☀️ Choose a Solar Panel Card</h4>
+      <div class="card-options">
         <button id="tutorialSolarButton" class="game-card solar tutorial-muted" onclick="tutorialBuySolar()"><div class="game-card-price">$2,000</div><div class="game-card-details">⚡ +10e<br>😊 +2</div><div class="card-count">Solar Panel SP01</div></button>
       </div>
-      <button id="tutorialBrownoutButton" class="game-card goods tutorial-muted" style="width:100%;max-width:none;margin-top:12px;" onclick="tutorialCauseBrownout()"><div class="game-card-price">$320</div><div class="game-card-details">⚡ 4e<br>😊 +3</div><div class="card-count">Goods Card G12 — Brownout Example</div></button>
-
     </div>
   </div>
 
