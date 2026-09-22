@@ -1589,19 +1589,6 @@ Enter each player's name below and click <strong>Add Neighbor</strong>.
       <div class="payment-row"><span>Utility Bill</span><strong id="tutorialUtilityBill" style="color:var(--danger);">-$0</strong></div>
       <div class="payment-row"><span>Grid Fee</span><strong id="tutorialGridFee" style="color:var(--danger);">-$0</strong></div>
     </div>
-    <button id="tutorialDetailsToggle" class="player-details-toggle" onclick="toggleTutorialPlayerDetails()">Show Player Details</button>
-    <div id="tutorialPlayerDetails" class="player-details">
-      <table class="scorecard-table">
-        <thead><tr><th>Wallet Cash</th><th>e From Goods (-)</th><th>e From Solar (+)</th><th>Total Net e Balance</th><th>Happiness Index</th></tr></thead>
-        <tbody><tr>
-          <td id="tutorialCash" style="color:var(--success);font-weight:bold;">$3,000</td>
-          <td id="tutorialGoodsE" style="color:var(--yellow-card);font-weight:bold;">0 e</td>
-          <td id="tutorialSolarE" style="color:var(--blue-card);font-weight:bold;">0 e</td>
-          <td id="tutorialNetE" style="font-weight:bold;color:var(--success);">0 e</td>
-          <td id="tutorialHappiness" style="color:#a855f7;font-weight:bold;">0 😊</td>
-        </tr></tbody>
-      </table>
-    </div>
     <div class="tutorial-action-area card-selection">
       <button id="tutorialFinishButton" class="no-purchase-button tutorial-muted" onclick="tutorialFinishTurn()">⏭️ No Purchase This Turn -- Finish Round</button>
 
@@ -1616,6 +1603,19 @@ Enter each player's name below and click <strong>Add Neighbor</strong>.
       <div class="card-options">
         <button id="tutorialSolarButton" class="game-card solar tutorial-muted" onclick="tutorialBuySolar()"><div class="game-card-price">$2,000</div><div class="game-card-details">⚡ +10e<br>😊 +2</div><div class="card-count">Solar Panel SP01</div></button>
       </div>
+    </div>
+    <button id="tutorialDetailsToggle" class="player-details-toggle" onclick="toggleTutorialPlayerDetails()">Show Player Details</button>
+    <div id="tutorialPlayerDetails" class="player-details-hidden">
+      <table class="scorecard-table">
+        <thead><tr><th>Wallet Cash</th><th>e From Goods (-)</th><th>e From Solar (+)</th><th>Total Net e Balance</th><th>Happiness Index</th></tr></thead>
+        <tbody><tr>
+          <td id="tutorialCash" style="color:var(--success);font-weight:bold;">$3,000</td>
+          <td id="tutorialGoodsE" style="color:var(--yellow-card);font-weight:bold;">0 e</td>
+          <td id="tutorialSolarE" style="color:var(--blue-card);font-weight:bold;">0 e</td>
+          <td id="tutorialNetE" style="font-weight:bold;color:var(--success);">0 e</td>
+          <td id="tutorialHappiness" style="color:#a855f7;font-weight:bold;">0 😊</td>
+        </tr></tbody>
+      </table>
     </div>
   </div>
 
@@ -2269,7 +2269,7 @@ function toggleTutorialPlayerDetails(){
     tutorialState.showDetails=!tutorialState.showDetails;
     const details=document.getElementById("tutorialPlayerDetails");
     const button=document.getElementById("tutorialDetailsToggle");
-    if(details) details.className=tutorialState.showDetails?"player-details show":"player-details";
+    if(details) details.className=tutorialState.showDetails?"":"player-details-hidden";
     if(button) button.innerText=tutorialState.showDetails?"Hide Player Details":"Show Player Details";
 }
 function tutorialElectricitySummary(){
@@ -2305,7 +2305,7 @@ function renderTutorial(){
     document.getElementById("tutorialHappiness").innerText=`${t.happiness} 😊`;
     const details=document.getElementById("tutorialPlayerDetails");
     const detailsButton=document.getElementById("tutorialDetailsToggle");
-    if(details) details.className=t.showDetails?"player-details show":"player-details";
+    if(details) details.className=t.showDetails?"":"player-details-hidden";
     if(detailsButton) detailsButton.innerText=t.showDetails?"Hide Player Details":"Show Player Details";
     document.getElementById("tutorialDemandValue").innerText=`${t.demand} / ${t.capacity} e`;
     document.getElementById("tutorialBrownoutValue").innerText=`${t.brownouts} / 2`;
