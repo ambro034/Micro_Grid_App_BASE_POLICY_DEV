@@ -1569,10 +1569,10 @@ Enter each player's name below and click <strong>Add Neighbor</strong>.
 
 <div class="tutorial-shell">
   <div id="tutorialGuide" class="tutorial-guide">
-    <div id="tutorialStepLabel" class="tutorial-step-label">Step 1 of 7</div>
+    <div id="tutorialStepLabel" class="tutorial-step-label">Step 1 of 9</div>
     <div id="tutorialGuideTitle" class="tutorial-guide-title">Meet Your Player Card</div>
     <div id="tutorialGuideText" class="tutorial-guide-text"></div>
-    <div class="tutorial-progress"><div id="tutorialProgressBar" class="tutorial-progress-bar" style="width:14.3%;"></div></div>
+    <div class="tutorial-progress"><div id="tutorialProgressBar" class="tutorial-progress-bar" style="width:11.1%;"></div></div>
   </div>
 
   <div class="tutorial-demo-grid">
@@ -1593,10 +1593,12 @@ Enter each player's name below and click <strong>Add Neighbor</strong>.
     <div class="tutorial-action-area">
       <button id="tutorialFinishButton" class="no-purchase-button tutorial-muted" onclick="tutorialFinishTurn()">⏭️ No Purchase This Turn -- Finish Round</button>
       <div class="tutorial-card-row">
-        <button id="tutorialGoodsButton" class="game-card goods tutorial-muted" onclick="tutorialBuyGoods()"><div class="game-card-price">$160</div><div class="game-card-details">⚡ 4e<br>😊 +1</div><div class="card-count">Practice Goods Card</div></button>
-        <button id="tutorialSolarButton" class="game-card solar tutorial-muted" onclick="tutorialBuySolar()"><div class="game-card-price">$200</div><div class="game-card-details">⚡ +4e<br>😊 +2</div><div class="card-count">Practice Solar Panel</div></button>
+        <button id="tutorialGoodsButton" class="game-card goods tutorial-muted" onclick="tutorialBuyGoods()"><div class="game-card-price">$400</div><div class="game-card-details">⚡ 4e<br>😊 +4</div><div class="card-count">Goods Card G04</div></button>
+        <button id="tutorialSolarButton" class="game-card solar tutorial-muted" onclick="tutorialBuySolar()"><div class="game-card-price">$2,000</div><div class="game-card-details">⚡ +10e<br>😊 +2</div><div class="card-count">Solar Panel SP01</div></button>
       </div>
-      <button id="tutorialBrownoutButton" class="mode-button tutorial-muted" style="width:100%;max-width:none;margin-top:12px;" onclick="tutorialCauseBrownout()">⚠️ Make a Practice Purchase That Exceeds Capacity</button>
+      <button id="tutorialBrownoutButton" class="game-card goods tutorial-muted" style="width:100%;max-width:none;margin-top:12px;" onclick="tutorialCauseBrownout()"><div class="game-card-price">$320</div><div class="game-card-details">⚡ 4e<br>😊 +3</div><div class="card-count">Goods Card G12 — Brownout Example</div></button>
+      <button id="tutorialUpgradeButton" class="mode-button tutorial-muted" style="width:100%;max-width:none;margin-top:12px;" onclick="tutorialAddCapacity()">🔧 Approve Grid Capacity Upgrade</button>
+      <button id="tutorialSolarRoundButton" class="mode-button tutorial-muted" style="width:100%;max-width:none;margin-top:12px;" onclick="tutorialSolarRound()">☀️ Choose Solar Panel Round Instead</button>
     </div>
   </div>
 
@@ -2222,49 +2224,31 @@ function appendLog(msg){
 // ---------------------------------------------------------------------------
 // OPTIONAL GUIDED TUTORIAL
 // ---------------------------------------------------------------------------
-let tutorialState={active:false,step:1,cash:500,goodsE:0,solarE:0,happiness:0,demand:4,capacity:10,brownouts:0};
+let tutorialState={active:false,step:1,cash:3000,goodsE:0,solarE:0,happiness:0,demand:4,capacity:10,brownouts:0};
 
 function startTutorial(){
-    if(players.length===0){
-        showMessage("No Neighbors Registered","Please register at least one neighbor before starting the tutorial.","🏠");
-        return;
-    }
+    if(players.length===0){showMessage("No Neighbors Registered","Please register at least one neighbor before starting the tutorial.","🏠");return;}
     updateDynamicGridSetup();
-    tutorialState={active:true,step:1,cash:500,goodsE:0,solarE:0,happiness:0,demand:4,capacity:10,brownouts:0};
+    tutorialState={active:true,step:1,cash:3000,goodsE:0,solarE:0,happiness:0,demand:4,capacity:10,brownouts:0};
     document.getElementById("playerSetupView").style.display="none";
     document.getElementById("gameSetupView").style.display="none";
     document.getElementById("tutorialView").style.display="block";
     document.getElementById("tutorialPlayerName").innerText=`🏠 ${players[0]?.name||"Tutorial Player"} (Practice)`;
-    renderTutorial();
-    window.scrollTo({top:0,behavior:"smooth"});
+    renderTutorial();window.scrollTo({top:0,behavior:"smooth"});
 }
-
 function tutorialClearHighlights(){
-    // The player card is a parent container for the tutorial controls.
-    // Never apply tutorial-muted to it, because pointer-events:none on the
-    // parent would prevent the highlighted child buttons from being clicked.
     const playerCard=document.getElementById("tutorialPlayerCard");
-    if(playerCard){
-        playerCard.classList.remove("tutorial-highlight");
-        playerCard.classList.remove("tutorial-muted");
-    }
-
-    ["tutorialDemandStat","tutorialFinishButton","tutorialGoodsButton","tutorialSolarButton","tutorialBrownoutButton"].forEach(id=>{
-        const el=document.getElementById(id);
-        if(el){
-            el.classList.remove("tutorial-highlight");
-            el.classList.add("tutorial-muted");
-        }
+    if(playerCard){playerCard.classList.remove("tutorial-highlight","tutorial-muted");}
+    ["tutorialDemandStat","tutorialFinishButton","tutorialGoodsButton","tutorialSolarButton","tutorialBrownoutButton","tutorialUpgradeButton","tutorialSolarRoundButton"].forEach(id=>{
+        const el=document.getElementById(id);if(el){el.classList.remove("tutorial-highlight");el.classList.add("tutorial-muted");}
     });
     document.getElementById("tutorialNextButton").style.display="none";
 }
-
 function tutorialEnable(id){const el=document.getElementById(id);if(el){el.classList.remove("tutorial-muted");el.classList.add("tutorial-highlight");}}
-
 function renderTutorial(){
     const t=tutorialState;
-    document.getElementById("tutorialStepLabel").innerText=`Step ${t.step} of 7`;
-    document.getElementById("tutorialProgressBar").style.width=`${(t.step/7)*100}%`;
+    document.getElementById("tutorialStepLabel").innerText=`Step ${t.step} of 9`;
+    document.getElementById("tutorialProgressBar").style.width=`${(t.step/9)*100}%`;
     document.getElementById("tutorialCash").innerText=`$${t.cash.toLocaleString()}`;
     document.getElementById("tutorialGoodsE").innerText=`${t.goodsE} e`;
     document.getElementById("tutorialSolarE").innerText=`${t.solarE} e`;
@@ -2272,14 +2256,14 @@ function renderTutorial(){
     document.getElementById("tutorialDemandValue").innerText=`${t.demand} / ${t.capacity} e`;
     document.getElementById("tutorialBrownoutValue").innerText=`${t.brownouts} / 2`;
     tutorialClearHighlights();
-    const title=document.getElementById("tutorialGuideTitle"), text=document.getElementById("tutorialGuideText"), next=document.getElementById("tutorialNextButton");
+    const title=document.getElementById("tutorialGuideTitle"),text=document.getElementById("tutorialGuideText"),next=document.getElementById("tutorialNextButton");
     if(t.step===1){
-        title.innerText="Meet Your Player Card";
-        text.innerHTML="Your player card tracks your <strong>Wallet Cash</strong>, electricity used by Goods, electricity supplied by Solar, and your <strong>Happiness</strong> score. During the real game, purchases and round settlements change these values.";
-        tutorialEnable("tutorialPlayerCard"); next.style.display="block"; next.innerText="Continue →";
+        title.innerText="Meet Your Player Card — and Your Goal";
+        text.innerHTML="Your player card tracks <strong>Wallet Cash</strong>, electricity used by Goods, electricity supplied by Solar, and your <strong>Happiness</strong> score. <strong>The goal of the game is to accumulate as many Happiness Points as possible.</strong> Goods and Solar can add Happiness, but your choices also affect the shared micro-grid.";
+        tutorialEnable("tutorialPlayerCard");next.style.display="block";next.innerText="Continue →";
     }else if(t.step===2){
-        title.innerText="Buy a Goods Card";
-        text.innerHTML="Goods provide <strong>Happiness</strong>, but they also increase electricity demand on the shared micro-grid. Select the highlighted practice Goods Card.";
+        title.innerText="Buy an Actual Goods Card";
+        text.innerHTML="The tutorial now uses cards from the actual game. <strong>Goods Card G04</strong> costs <strong>$400</strong>, uses <strong>4e</strong>, and earns <strong>+4 Happiness</strong>. Select it to practice a purchase.";
         tutorialEnable("tutorialGoodsButton");
     }else if(t.step===3){
         title.innerText="Finish Your Turn";
@@ -2287,48 +2271,47 @@ function renderTutorial(){
         tutorialEnable("tutorialFinishButton");
     }else if(t.step===4){
         title.innerText="Watch Grid Capacity";
-        text.innerHTML="The grid is shared by the entire neighborhood. Here, neighborhood demand is <strong>8e</strong> while capacity is <strong>10e</strong>. Purchases that push demand beyond capacity can cause a brownout.";
-        t.demand=8; document.getElementById("tutorialDemandValue").innerText="8 / 10 e"; tutorialEnable("tutorialDemandStat"); next.style.display="block"; next.innerText="Try a Brownout →";
+        t.demand=8;document.getElementById("tutorialDemandValue").innerText="8 / 10 e";
+        text.innerHTML="The grid is shared by the entire neighborhood. Here, neighborhood demand is <strong>8e</strong> while capacity is <strong>10e</strong>. A purchase that pushes total demand above capacity causes a brownout.";
+        tutorialEnable("tutorialDemandStat");next.style.display="block";next.innerText="Try a Brownout →";
     }else if(t.step===5){
-        title.innerText="See What Causes a Brownout";
-        text.innerHTML="The practice grid is using <strong>8 of 10 electrons</strong>. The highlighted purchase adds 4e, which would push demand to 12e. Make the practice purchase to see the result.";
+        title.innerText="Cause a Practice Brownout with an Actual Card";
+        text.innerHTML="<strong>Goods Card G12</strong> is an actual game card: it costs <strong>$320</strong>, uses <strong>4e</strong>, and provides <strong>+3 Happiness</strong>. With the grid already at 8e of 10e, this purchase would raise demand to 12e and cause a brownout. Select it.";
         tutorialEnable("tutorialBrownoutButton");
     }else if(t.step===6){
-        title.innerText="Add Solar Generation";
-        text.innerHTML="Solar panels add electricity generation to the shared micro-grid while providing benefits to the purchasing player. Select the highlighted practice Solar Panel to add <strong>4e</strong> of solar generation.";
+        title.innerText="Option 1 After a Brownout: Add Grid Capacity";
+        text.innerHTML="After a brownout, play cannot continue until the capacity problem is addressed. One option is to <strong>approve a grid capacity upgrade</strong>. The amount of capacity added is determined during Game Set-up. Approving an upgrade also permanently increases the grid fee paid by active players each round. Select the highlighted upgrade button to see the effect.";
+        tutorialEnable("tutorialUpgradeButton");
+    }else if(t.step===7){
+        title.innerText="Option 2 After a Brownout: Hold a Solar Panel Round";
+        text.innerHTML="When eligible players have enough cash, the neighborhood may choose <strong>Purchase Solar Panel</strong> instead of immediately approving the grid upgrade. This creates a special <strong>Solar Panel-only round</strong>: eligible players get an opportunity to buy Solar Panels. If solar generation resolves the capacity problem, the grid upgrade may be avoided; otherwise the capacity upgrade is still required. Select the highlighted button to continue.";
+        tutorialEnable("tutorialSolarRoundButton");
+    }else if(t.step===8){
+        title.innerText="Buy an Actual Solar Panel";
+        text.innerHTML="During the practice Solar Panel round, select <strong>Solar Panel SP01</strong>, an actual game card. It costs <strong>$2,000</strong>, generates <strong>+10e</strong>, and awards <strong>+2 Happiness</strong> to an individual purchaser. Solar generation reduces net neighborhood demand while remaining available in future rounds.";
         tutorialEnable("tutorialSolarButton");
     }else{
         title.innerText="Policies and Solar Programs Can Change the Rules";
-        text.innerHTML="In the actual game, <strong>Game Policies</strong> can add customer warnings, flexible electricity rates, fines, or service disconnection. The <strong>Solar Programs</strong> setting determines whether players may also cooperate on Community Solar. You will choose these options on the next screen.<br><br><strong>Your practice actions will now be discarded.</strong> Your registered players and actual game will start fresh.";
-        next.style.display="block"; next.innerText="Finish Tutorial and Go to Game Set-up →";
+        text.innerHTML="In the actual game, <strong>Game Policies</strong> can add customer warnings, flexible electricity rates, fines, or service disconnection. The <strong>Solar Programs</strong> setting determines whether players can purchase only individual roof-top solar or can also cooperate on Community Solar.<br><br>Remember: <strong>your goal is to finish the game with as many Happiness Points as possible.</strong> Your practice actions will now be discarded, and your registered players will begin the actual game fresh.";
+        next.style.display="block";next.innerText="Finish Tutorial and Go to Game Set-up →";
     }
 }
-
-function tutorialNext(){
-    if(tutorialState.step===7){finishTutorial();return;}
-    tutorialState.step+=1;renderTutorial();window.scrollTo({top:0,behavior:"smooth"});
-}
-function tutorialBuyGoods(){
-    if(tutorialState.step!==2)return;
-    tutorialState.cash-=160;tutorialState.goodsE=4;tutorialState.happiness+=1;tutorialState.demand=8;tutorialState.step=3;renderTutorial();
-}
+function tutorialNext(){if(tutorialState.step===9){finishTutorial();return;}tutorialState.step+=1;renderTutorial();window.scrollTo({top:0,behavior:"smooth"});}
+function tutorialBuyGoods(){if(tutorialState.step!==2)return;tutorialState.cash-=400;tutorialState.goodsE=4;tutorialState.happiness+=4;tutorialState.demand=8;tutorialState.step=3;renderTutorial();}
 function tutorialFinishTurn(){if(tutorialState.step!==3)return;tutorialState.step=4;renderTutorial();}
 function tutorialCauseBrownout(){
-    if(tutorialState.step!==5)return;
-    tutorialState.demand=12;tutorialState.brownouts=1;
-    showMessage("Practice Brownout","That purchase pushed neighborhood demand to <strong>12e</strong>, above the grid's <strong>10e</strong> capacity. In the actual game, the consequences depend on the grid parameters and policies selected.","⚠️","Continue Tutorial").then(()=>{tutorialState.step=6;renderTutorial();window.scrollTo({top:0,behavior:"smooth"});});
+    if(tutorialState.step!==5)return;tutorialState.cash-=320;tutorialState.goodsE+=4;tutorialState.happiness+=3;tutorialState.demand=12;tutorialState.brownouts=1;
+    showMessage("Practice Brownout","Goods Card G12 pushed neighborhood demand to <strong>12e</strong>, above the grid's <strong>10e</strong> capacity. The game now requires the neighborhood to address the capacity problem before normal play continues.","⚠️","Continue Tutorial").then(()=>{tutorialState.step=6;renderTutorial();window.scrollTo({top:0,behavior:"smooth"});});
 }
-function tutorialBuySolar(){
+function tutorialAddCapacity(){
     if(tutorialState.step!==6)return;
-    tutorialState.cash-=200;tutorialState.solarE=4;tutorialState.happiness+=2;tutorialState.demand=8;tutorialState.step=7;renderTutorial();window.scrollTo({top:0,behavior:"smooth"});
+    showMessage("Grid Capacity Upgrade","In the actual game, the configured number of electrons would be added to grid capacity and the corresponding permanent grid fee would be added. For the tutorial, we will demonstrate the alternative Solar Panel option next.","🔧","See Solar Panel Option").then(()=>{tutorialState.step=7;renderTutorial();window.scrollTo({top:0,behavior:"smooth"});});
 }
-function finishTutorial(){
-    tutorialState.active=false;
-    document.getElementById("tutorialView").style.display="none";
-    document.getElementById("gameSetupView").style.display="block";
-    updateDynamicGridSetup();
-    window.scrollTo({top:0,behavior:"smooth"});
+function tutorialSolarRound(){if(tutorialState.step!==7)return;tutorialState.step=8;renderTutorial();window.scrollTo({top:0,behavior:"smooth"});}
+function tutorialBuySolar(){
+    if(tutorialState.step!==8)return;tutorialState.cash-=2000;tutorialState.solarE+=10;tutorialState.happiness+=2;tutorialState.demand=Math.max(0,tutorialState.demand-10);tutorialState.step=9;renderTutorial();window.scrollTo({top:0,behavior:"smooth"});
 }
+function finishTutorial(){tutorialState.active=false;document.getElementById("tutorialView").style.display="none";document.getElementById("gameSetupView").style.display="block";updateDynamicGridSetup();window.scrollTo({top:0,behavior:"smooth"});}
 
 async function finalizePlayers(){
     if(players.length===0){
