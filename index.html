@@ -2240,8 +2240,21 @@ function startTutorial(){
 }
 
 function tutorialClearHighlights(){
-    ["tutorialPlayerCard","tutorialDemandStat","tutorialFinishButton","tutorialGoodsButton","tutorialSolarButton","tutorialBrownoutButton"].forEach(id=>{
-        const el=document.getElementById(id); if(el){el.classList.remove("tutorial-highlight");el.classList.add("tutorial-muted");}
+    // The player card is a parent container for the tutorial controls.
+    // Never apply tutorial-muted to it, because pointer-events:none on the
+    // parent would prevent the highlighted child buttons from being clicked.
+    const playerCard=document.getElementById("tutorialPlayerCard");
+    if(playerCard){
+        playerCard.classList.remove("tutorial-highlight");
+        playerCard.classList.remove("tutorial-muted");
+    }
+
+    ["tutorialDemandStat","tutorialFinishButton","tutorialGoodsButton","tutorialSolarButton","tutorialBrownoutButton"].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el){
+            el.classList.remove("tutorial-highlight");
+            el.classList.add("tutorial-muted");
+        }
     });
     document.getElementById("tutorialNextButton").style.display="none";
 }
